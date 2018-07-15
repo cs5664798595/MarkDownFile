@@ -1,0 +1,19 @@
+createdAt: "2018-06-28T15:52:01.976Z"
+updatedAt: "2018-06-28T15:57:00.232Z"
+type: "MARKDOWN_NOTE"
+folder: "6ea71690d9b1a43c391b"
+title: "caffe源码研究 : python接口"
+content: '''
+  # caffe源码研究 : python接口
+  一、画网络结构图
+  使用python接口的draw_net.py可以将提供的网络结构画出图像。 
+  首先，需要安装graphviz，源码安装，yum源安装，jumbo安装等等都可以。
+  
+  ![20161223145012712.png](\\:storage\\gakop0yl9d15g66r.png)
+  二、python接口
+  
+  三、python预测
+'''
+tags: []
+isStarred: false
+isTrashed: false

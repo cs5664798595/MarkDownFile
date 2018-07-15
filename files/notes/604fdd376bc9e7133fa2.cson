@@ -1,0 +1,120 @@
+createdAt: "2018-07-07T08:31:10.334Z"
+updatedAt: "2018-07-07T08:58:39.377Z"
+type: "MARKDOWN_NOTE"
+folder: "e828f5fa1a9ab42963c9"
+title: "Blob"
+content: '''
+  ## Blob
+  
+  >Blob是：
+  
+  1. 对处理数据的一层封装，用于在Caffe中通信传递。
+  2. 也为CPU和GPU间提供同步能力
+  3. 数学上，是一个N维的C风格的存储数组
+  4. 总的来说，Caffe使用Blob来交流数据，其是Caffe中标准的数组与统一的内存接口，它是多功能的，在不同的应用场景具有不同的含义，如可以是：batches of images（图像）, model parameters（模型参数）, and derivatives for optimization（最优化的导数）等。
+  
+  ``` 
+  template <typename Dtype>  
+  class Blob {  
+   public:  
+    Blob()  
+         : data_(), diff_(), count_(0), capacity_(0) {}  
+  
+    /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.  
+    explicit Blob(const int num, const int channels, const int height,  
+        const int width);  
+    explicit Blob(const vector<int>& shape);  
+  
+    .....  
+  
+   protected:  
+    shared_ptr<SyncedMemory> data_;  
+    shared_ptr<SyncedMemory> diff_;  
+    shared_ptr<SyncedMemory> shape_data_;  
+    vector<int> shape_;  
+    int count_;  
+    int capacity_;  
+  
+    DISABLE_COPY_AND_ASSIGN(Blob);  
+  };  // class Blob
+  ```
+  
+  * Blob在实现上是对SyncedMemory进行了一层封装。
+  * shape_为blob维度。
+  * data_为原始数据。
+  * diff_为梯度信息。
+  * count为该blob的总容量（即数据的size），函数count(x,y)（或count(x)）返回某个切片[x,y]（[x,end]）内容量，本质上就是shape[x]shape[x+1]….*shape[y]的值.
+  
+  >> #### Blob本质是对SyncedMemory的再封装
+  ```
+  class SyncedMemory {  
+   public:  
+  ...  
+   const void* cpu_data();  
+   const void* gpu_data();  
+   void* mutable_cpu_data();  
+   void* mutable_gpu_data();  
+  ...  
+   private:  
+  ...  
+    void* cpu_ptr_;  
+    void* gpu_ptr_;  
+  ...  
+  };  // class SyncedMemory
+  ```
+  count的代码如下
+  ```
+   inline int count(int start_axis, int end_axis) const {
+      int count = 1;
+      for (int i = start_axis; i < end_axis; ++i) {
+        count *= shape(i);
+      }
+      return count;
+    }
+  ```
+  >>blob使用SyncedMemory类进行数据存储，数据成员 data_指向实际存储数据的内存或显存块，shape_存储了当前blob的维度信息，diff_这个保存了反向传递时候的梯度信息。在Blob中其实不是只有num，channel，height，width这种四维形式，它是一个不定维度的数据结构，将数据展开存储，而维度单独存在一个vector 类型的shape_变量中，这样每个维度都可以任意变化。
+  
+  
+  Blob是 Caffe中处理和传递实际数据的封装包，并且在CPU与GPU之间具有同步处理能力。从数学意义上说， blob是按 C风格连续存储的N维数组。
+  
+  Blobs可根据 CPU主机到GPU 设备的同步需要，屏蔽CPU/GPU混和运算在计上的开销。主机和设备上的内存按需求分配（lazily），以提高内存的使用效率。
+  
+  在blob中也提供了类似的函数对数据进行读取，也分为常量方式和变量方式。
+  ```
+    const Dtype* cpu_data() const;
+    const Dtype* gpu_data() const;
+    const Dtype* cpu_diff() const;
+    const Dtype* gpu_diff() const;
+    Dtype* mutable_cpu_data();
+    Dtype* mutable_gpu_data();
+    Dtype* mutable_cpu_diff();
+    Dtype* mutable_gpu_diff();
+  ```
+  之所以这么设计是因为blob使用了一个SyncedMem类来同步CPU和GPU上的数值，以隐藏同步的细节和最小化传送数据。一个经验准则是，如果不想改变数值，就一直使用常量调用，而且绝不要在自定义类中存储指针。每次操作blob时，调用相应的函数来获取它的指针，因为SyncedMem需要用这种方式来确定何时需要复制数据。
+  
+  >>实际上，使用GPU时，Caffe中CPU代码先从磁盘中加载数据到blob，同时请求分配一个GPU设备核（device kernel）以使用GPU进行计算，再将计算好的blob数据送入下一层，这样既实现了高效运算，又忽略了底层细节。只要所有layers均有GPU实现，这种情况下所有的中间数据和梯度都会保留在GPU上。
+  
+  这里有一个示例，用以确定blob何时会复制数据：
+  ```
+  // 假定数据在CPU上进行初始化，我们有一个blob 
+  const Dtype* foo; 
+  Dtype* bar; 
+  foo = blob.gpu_data(); // 数据从CPU复制到GPU 
+  foo = blob.cpu_data(); // 没有数据复制，两者都有最新的内容 
+  bar = blob.mutable_gpu_data(); // 没有数据复制
+  // ... 一些操作 ... 
+  bar = blob.mutable_gpu_data(); // 仍在GPU，没有数据复制 
+  foo = blob.cpu_data(); // 由于GPU修改了数值，数据从GPU复制到CPU 
+  foo = blob.gpu_data(); //没有数据复制，两者都有最新的内容 
+  bar = blob.mutable_cpu_data(); // 依旧没有数据复制 
+  bar = blob.mutable_gpu_data(); //数据从CPU复制到GPU  
+  bar = blob.mutable_cpu_data(); //数据从GPU复制到CPU  
+  ```
+  
+  
+  
+  
+'''
+tags: []
+isStarred: false
+isTrashed: false

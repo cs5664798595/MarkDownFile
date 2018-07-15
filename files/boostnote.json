@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "key": "6ea71690d9b1a43c391b",
+      "color": "#1278BD",
+      "name": "Default"
+    },
+    {
+      "key": "28a1612eace96a999cc3",
+      "color": "#FF8E00",
+      "name": "迁移学习"
+    },
+    {
+      "key": "e828f5fa1a9ab42963c9",
+      "color": "#E10051",
+      "name": "caffe"
+    }
+  ],
+  "version": "1.0"
+}
